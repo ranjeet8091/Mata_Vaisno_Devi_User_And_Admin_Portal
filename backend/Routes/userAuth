@@ -1,0 +1,121 @@
+const express = require("express");
+const router = express.Router();
+const User = require("../schema/userSchema");
+const jwt = require("jsonwebtoken");
+const { authenticateUser } = require("../MiddleWare/auth")
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  param: "profile-upload",
+  upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+});
+const upload = multer({ storage: storage });
+
+router.get("/authenticate", authenticateUser, async (req, res) => {
+  res.json(req.user);
+})
+
+router.get("/getuser", authenticateUser, async (req, res) => {
+  res.json(req.user);
+});
+
+
+router.post("/login", async (req, res) => {
+  const { email, password, type } = req.body;
+  if (!email || !password || !type) {
+    return res.status(400).send("All fields are required");
+  }
+  const user = await User.findOne({
+    email: email,
+    password: password,
+    type: type,
+  });
+
+  if (user) {
+    const payload = { id: user._id, email: user.email };
+    const token = jwt.sign(payload, "Userdata", { expiresIn: "1h" });
+    res.status(200).json({ user, token });
+    console.log("USER LOGGED IN SUCCESSFULLY", user,token);
+  } else {
+    res.status(400).send("User not logged in");
+  }
+});
+
+router.post("/signup",upload.single("profileImageUrl"), async (req, res) => {
+  const { name, email, age, gender, password, type } = req.body;
+
+  if (!name || !email || !age || !gender || !password || !type) {
+    return res.status(400).send("All fields are required");
+  }
+  if (type !== "user" && type !== "admin") {
+    return res.status(400).send("Invalid type");
+  }
+  const userFind = await User.findOne({ email: email });
+
+  if (userFind) {
+    console.log(" ALREADY EXISTS", userFind);
+    return res.status(400).send("User already exists");
+  }
+
+  const user = new User({
+    name,
+    email,
+    age,
+    gender,
+    password,
+    type,
+    profileImageUrl:""
+  });
+  if (user) {
+    res.status(200).send(user);
+    console.log("USER ADDED SUCCESSFULLY", user);
+    user.save();
+  } else {
+    res.status(400).send("User not created");
+  }
+});
+
+router.put("/update", authenticateUser,upload.single("profileImage"), async (req, res) => {
+  try {
+    const { name, age, password } = req.body;
+    const image=req.file.path
+    const user = req.user; // it is taken from middleware authenticateUser
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    user.name = name || user.name;
+    user.age = age || user.age;
+    user.password = password || user.password;
+    user.profileImageUrl=image
+    await user.save();
+    res.status(200).send(user);
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).send("Server error: " + error.message);
+  }
+});
+
+router.put("/change-password", authenticateUser, async (req, res) => {
+  try {
+    const { email,newPassword } = req.body;
+    const user = req.user; // it is taken from middleware authenticateUser
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    user.password = newPassword;
+    await user.save();
+    res.status(200).send(user);
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).send("Server error: " + error.message);
+  }
+});
+
+module.exports = {
+  router,
+  authenticateUser
+};

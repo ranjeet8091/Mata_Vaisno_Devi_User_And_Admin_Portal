@@ -1,0 +1,47 @@
+const express=require("express")
+const tripRrouter=express.Router()
+const Trip_Registration=require("../schema/Trip_Registration")
+const {authenticateUser}=require("../MiddleWare/auth")
+
+tripRrouter.post("/register",authenticateUser,async(req,res)=>{
+    const {userName,dob,fatherName,motherName,travelDate,aadhaarId,permanentAddress,email,status}=req.body
+    const tripRegistration=new Trip_Registration({
+        userName,
+        dob,
+        fatherName,
+        motherName,
+        travelDate,
+        aadhaarId,
+        permanentAddress,
+        email,
+        status
+    })
+    const savedtripRegistration=await tripRegistration.save()
+    res.send(savedtripRegistration)
+})
+
+tripRrouter.get("/registrations",authenticateUser,async(req,res)=>{
+    const user=req.user
+    const tripRegistrations=await Trip_Registration.find({email:user.email, status: { $ne: "Rejected" }})
+    res.send(tripRegistrations)
+})
+tripRrouter.get("/status",authenticateUser,async(req,res)=>{
+    const user=req.user
+    const tripRegistrations=await Trip_Registration.find({status:"Pending"})
+    res.send(tripRegistrations)
+})
+tripRrouter.put("/status/:uid/:id",authenticateUser,async(req,res)=>{
+    const uid=req.params.uid
+    const id=req.params.id
+    const {status}=req.body
+     if (!status) {
+        console.log("Status is required");
+      return res.status(400).json({ error: "Status is required" });
+    }
+    const user=req.user
+    const tripRegistration=await Trip_Registration.findOne({_id:id})
+    tripRegistration.status=status
+    const updatedtripRegistration=await tripRegistration.save()
+    res.send(updatedtripRegistration)
+})
+module.exports=tripRrouter  

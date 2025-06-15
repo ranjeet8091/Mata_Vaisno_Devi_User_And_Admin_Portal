@@ -1,0 +1,68 @@
+const latestNews = require("../schema/latestNews");
+const express = require("express");
+const routerNews = express.Router();
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { authenticateUser } = require("../Routes/userAuth");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  param: "news-upload",
+  upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+});
+const upload = multer({ storage: storage });
+
+routerNews.get("/getnews", async (req, res) => {
+  try {
+    const news = await latestNews.find();
+    res.status(200).json({ news });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+routerNews.get("/getnews/:id", authenticateUser, async (req, res) => {
+  try {
+     console.log("Received ID:", req.params.id);
+    const news = await latestNews.findById(req.params.id);
+    if (!news) {
+      return res.status(404).json({ message: "News not found" });
+    }
+    res.status(200).json({ news });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+
+routerNews.post(
+  "/addnews",
+  authenticateUser,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { title, content, date } = req.body;
+      const image = req.file;
+
+      if (!title || !content || !image || !date) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      const newNews = new latestNews({
+        title,
+        content,
+        image: image.path, // Cloudinary URL
+        date: new Date(date),
+      });
+
+      await newNews.save();
+      res
+        .status(201)
+        .json({ message: "News added successfully", news: newNews });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Server error: " + error.message });
+    }
+  }
+);
+module.exports = routerNews;
