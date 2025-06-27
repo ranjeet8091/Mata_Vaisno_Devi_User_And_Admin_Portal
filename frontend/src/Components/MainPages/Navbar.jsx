@@ -1,75 +1,17 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Context/authContext";
-import axios from "axios";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [userLogin, setUserLogin] = useState(false);
-  const [userType, setUserType] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [flip, setFlip] = useState(false);
-  const [flipCount, setFlipCount] = useState(0); 
-
   const navigate = useNavigate();
-  const { Authenticate, userDetails, logout } = useContext(AuthContext);
+  const { userDetails, logout, isLogin } = useContext(AuthContext);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      const currentToken = localStorage.getItem("token");
-      setToken(currentToken);
+  console.log("Navbar Context:", { isLogin, userDetails }); // Debug log
 
-      if (currentToken) {
-        try {
-          const authRes = await Authenticate(currentToken);
-          if (authRes) {
-            const res = await axios.get("http://localhost:5000/auth/getuser", {
-              headers: {
-                authorization: `Bearer ${currentToken}`,
-              },
-            });
-            const type = res.data.type || userDetails?.type || "";
-            setUserType(type);
-            setUserLogin(true)
-            if (!type && flipCount < 3) {
-              setFlip((prev) => !prev);
-              setFlipCount((prev) => prev + 1);
-            }
-          } else {
-            setUserLogin(false);
-            setUserType("");
-            localStorage.removeItem("token");
-          }
-        } catch (error) {
-          setUserLogin(false);
-          setUserType("");
-          localStorage.removeItem("token");
-        }
-      } else {
-        setUserLogin(false);
-        setUserType("");
-      }
-      setIsLoading(false);
-    };
-    checkAuth();
-  }, [Authenticate, userDetails, token, flip]);
-
-  // Watch for userDetails changes to update userType
-  useEffect(() => {
-    if (userLogin && !userType && userDetails?.type && isLoading) {
-      setUserType(userDetails.type);
-      setIsLoading(false);
-    }
-  }, [userLogin, userType, userDetails, isLoading]);
-
-  const handleLogout = () => {
-    logout();
-    setUserLogin(false);
-    setUserType("");
-    setToken(null);
+  const handleLogout = async () => {
+    await logout();
     localStorage.removeItem("token");
     navigate("/login");
   };
@@ -112,92 +54,63 @@ const Navbar = () => {
             mobileMenuOpen ? "block" : "hidden"
           } md:flex md:items-center w-full md:w-auto mt-4 md:mt-0`}
         >
-          {isLoading ? (
-            <div className="text-center">Loading...</div>
-          ) : (
-            <>
-              {!userLogin && (
-                <div className="flex flex-col space-y-2 md:flex-row md:space-x-4 md:space-y-0">
-                  <Link to="/news" className={linkClasses}>
-                    Latest News
-                  </Link>
-                  <Link to="/login" className={linkClasses}>
-                    Login
-                  </Link>
-                  <Link to="/signup" className={linkClasses}>
-                    Signup
-                  </Link>
-                </div>
-              )}
-              {userLogin && (
-                <div className="flex flex-col space-y-2 md:flex-row md:space-x-4 md:space-y-0">
-                  <Link to="/news" className={linkClasses}>
-                    Latest News
-                  </Link>
-                  <Link to="/announcement" className={linkClasses}>
-                    Announcement
-                  </Link>
-                  <div className="relative group">
-                    <button
-                      onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
-                      className={`${linkClasses} focus:outline-none md:pointer-events-auto`}
-                      aria-expanded={mobileServicesOpen}
-                    >
-                      Services
-                    </button>
-                    <div
-                      className={`${
-                        mobileServicesOpen ? "block" : "hidden"
-                      } md:absolute md:hidden md:group-hover:block bg-blue-800 mt-1 rounded shadow-lg z-10`}
-                    >
-                      <Link
-                        to="/pithuBooking"
-                        className="block px-4 py-2 hover:bg-yellow-400 hover:text-blue-900"
-                      >
-                        Pithu Booking
-                      </Link>
-                      <Link
-                        to="/ropeWayBooking"
-                        className="block px-4 py-2 hover:bg-yellow-400 hover:text-blue-900"
-                      >
-                        RopeWay Booking
-                      </Link>
-                      <Link
-                        to="/helicopterBooking"
-                        className="block px-4 py-2 hover:bg-yellow-400 hover:text-blue-900"
-                      >
-                        Helicopter Booking
-                      </Link>
-                    </div>
-                  </div>
-                  {userType === "admin" && (
-                    <Link to="/register-request" className={linkClasses}>
-                      Check Registration Request
-                    </Link>
-                  )}
-                  {userType === "user" && (
-                    <>
-                      <Link to="/registerPage" className={linkClasses}>
-                        Trip Registration
-                      </Link>
-                      <Link to="/history" className={linkClasses}>
-                        Trip History
-                      </Link>
-                    </>
-                  )}
-                  <Link to="/profile" className={linkClasses}>
-                    Profile
-                  </Link>
+          <div className="flex flex-col space-y-2 md:flex-row md:space-x-4 md:space-y-0">
+            <Link to="/news" className={linkClasses}>Latest News</Link>
+
+            {!isLogin ? (
+              <>
+                <Link to="/login" className={linkClasses}>Login</Link>
+                <Link to="/signup" className={linkClasses}>Signup</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/announcement" className={linkClasses}>Announcement</Link>
+
+                {/* Services Dropdown */}
+                <div className="relative group">
                   <button
-                    onClick={handleLogout}
-                    className={`${linkClasses} focus:outline-none text-left`}
+                    onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
+                    className={`${linkClasses} focus:outline-none`}
                   >
-                    Logout
+                    Services
                   </button>
+                  <div
+                    className={`${
+                      mobileServicesOpen ? "block" : "hidden"
+                    } md:absolute md:group-hover:block bg-blue-800 mt-1 rounded shadow-lg z-10`}
+                  >
+                    <Link to="/pithuBooking" className="block px-4 py-2 hover:bg-yellow-400 hover:text-blue-900">
+                      Pithu Booking
+                    </Link>
+                    <Link to="/ropeWayBooking" className="block px-4 py-2 hover:bg-yellow-400 hover:text-blue-900">
+                      RopeWay Booking
+                    </Link>
+                    <Link to="/helicopterBooking" className="block px-4 py-2 hover:bg-yellow-400 hover:text-blue-900">
+                      Helicopter Booking
+                    </Link>
+                  </div>
                 </div>
-              )}
-            </>
-          )}
+
+                {userDetails?.type === "admin" && (
+                  <Link to="/register-request" className={linkClasses}>
+                    Check Registration Request
+                  </Link>
+                )}
+
+                {userDetails?.type === "user" && (
+                  <>
+                    <Link to="/registerPage" className={linkClasses}>Trip Registration</Link>
+                    <Link to="/history" className={linkClasses}>Trip History</Link>
+                  </>
+                )}
+
+                <Link to="/profile" className={linkClasses}>Profile</Link>
+                <button onClick={handleLogout} className={`${linkClasses} focus:outline-none text-left`}>
+                  Logout
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </nav>

@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [userDetails, setUserDetails] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLogin,setIsLogin]=useState(false) ///// testing for navbar
   const navigate = useNavigate();
 
   const Authenticate = async (token) => {
@@ -22,6 +23,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const login=async(token,userDetail)=>{
+      setIsLogin(true);
+      setUserDetails(userDetail);      
+  }
+
   const fetchUserProfile = async (token) => {
     try {
       const res = await axios.get("http://localhost:5000/auth/getuser", {
@@ -31,6 +37,7 @@ export const AuthProvider = ({ children }) => {
       // Adjust this based on your backend response structure
       const data = res.data.user || res.data;
       setUserDetails(data);
+      setIsLogin(true)
       console.log("Fetched userDetails:", data);
     } catch (err) {
       console.error("Failed to fetch user profile:", err);
@@ -43,6 +50,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("token");
     setUserDetails(null);
+    setIsLogin(false);
     navigate("/login");
   };
 
@@ -64,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ userDetails, isLoading, token, Authenticate, logout }}>
+    <AuthContext.Provider value={{ userDetails, isLoading, token, Authenticate, logout,login,isLogin }}>
       {children}
     </AuthContext.Provider>
   );
