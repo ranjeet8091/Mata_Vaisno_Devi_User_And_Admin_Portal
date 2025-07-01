@@ -1,0 +1,33 @@
+const express=require("express");
+const AnnounceRouter=express.Router();
+const announcement=require("../schema/Announcement")
+
+AnnounceRouter.post("/addAnnouncement",async(req,res)=>{
+
+      try {
+        const {Title,content,Today}=req.body;
+      if(!Title || !content || !Today)
+      {
+        res.status(400).send("All fields are require")
+      }
+        const Announce=new announcement({
+        Title,
+        content,
+        Today
+      })
+      await Announce.save();
+      console.log({message:"Anncouncement Share SuccesFuuly",Announce})
+      res.status(200).json({message:"Anncouncement Share SuccesFuuly",Announce});
+      } catch (error) {
+        console.log(error);
+      res.status(500).json({ message: "Server error: " + error.message });
+      }
+
+})
+
+AnnounceRouter.get("/getallannounce",async(req,res)=>{
+    const data=await announcement.find({});
+    res.send(data)
+})
+module.exports=AnnounceRouter;
+

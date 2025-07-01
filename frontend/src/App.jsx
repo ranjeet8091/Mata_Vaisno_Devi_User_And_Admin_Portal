@@ -16,6 +16,10 @@ import RegistrationRequest from "./Components/RegularPage/RegistrationRequest";
 import PithuBooking from "./Components/RegularPage/PithuBooking";
 import RopeWayBooking from "./Components/RegularPage/RopeWayBooking";
 import HelicopterBooking from "./Components/RegularPage/HelicopterBooking";
+import Announcement from "./Components/RegularPage/Announcement";
+import Services from "./Components/RegularPage/Services";
+import HomePageOfBooking from "./Components/RegularPage/HomepageOfBooking";
+import ShowAllBooking from "./Components/RegularPage/ShowAllBooking";
 function App() {
   return (
     <>
@@ -37,6 +41,12 @@ function App() {
            <Route path="/pithuBooking" element={<PithuBooking />} />
            <Route path="/ropeWayBooking" element={<RopeWayBooking />} />
            <Route path="/helicopterBooking" element={<HelicopterBooking />} />
+           <Route path="/announcement" element={<Announcement />} />
+           <Route path="/services" element={<Services />} />
+           <Route path="/HomePageOfBooking" element={<HomePageOfBooking />} />
+           <Route path="/ShowBooking" element={<ShowAllBooking />} />
+
+
         </Routes>
       </AuthProvider>
     </>

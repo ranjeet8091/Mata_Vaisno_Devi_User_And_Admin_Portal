@@ -1,0 +1,37 @@
+const express=require("express");
+const BookingRouter=express.Router();
+const booking=require("../schema/Booking")
+BookingRouter.post("/addBooking",async(req,res)=>{
+    try {
+        const {typeOfBooking,date,userData,identityType,identityNumber}=req.body;
+        if(!typeOfBooking || !date || !userData || !identityNumber ||!identityType)
+        {
+            res.status(400).json({message:"Fill all details"})
+        }
+        const name=userData.name
+        const email=userData.email
+        const newBooking=new booking({
+            typeOfBooking,
+            date,
+            name,
+            email,
+            identityType,
+            identityNumber
+        })
+        await newBooking.save();
+        console.log({message:"Booked SuccesFully",newBooking})
+        res.status(201).json({message:"Booked SuccesFully",newBooking})
+    } catch (error) {
+         res.status(500).json({message:error})
+    }
+})
+BookingRouter.post("/getAllBooking",async(req,res)=>{
+     try {
+        const {email}=req.body
+        const Newbooking=await booking.find({email:email})
+        res.status(201).json(Newbooking)
+     } catch (error) {
+        res.status(500).json({message:error})
+     }
+})
+module.exports=BookingRouter
